@@ -17,6 +17,10 @@ final class Contact: NSManagedObject, Identifiable {
     @NSManaged var email: String
     @NSManaged var isFavourite: Bool
     
+    var isValid: Bool {
+        !name.isEmpty && !phoneNumber.isEmpty && !email.isEmpty
+    }
+    
     var isBirthday: Bool {
         Calendar.current.isDateInToday(dob)
     }
@@ -37,6 +41,7 @@ final class Contact: NSManagedObject, Identifiable {
 }
 
 
+
 extension Contact {
     
     private static var contactsFetchRequest: NSFetchRequest<Contact>{
@@ -49,6 +54,19 @@ extension Contact {
             NSSortDescriptor(keyPath: \Contact.name, ascending: true)
         ]
         return request
+    }
+    
+    static func filter(with config: SearchConfig) -> NSPredicate {
+        switch config.filter {
+        case .all:
+            return config.query.isEmpty ? NSPredicate(value: true) : NSPredicate(format: "name  CONTAINS[cd] %@", config.query)
+        case .fave:
+            return config.query.isEmpty ? NSPredicate(format: "isFavourite == %@", NSNumber(value: true)) : NSPredicate(format: "name  CONTAINS[cd] %@ AND isFavourite == true %@", config.query, NSNumber(value: true))
+        }
+    }
+    
+    static func sort(order: Sort) -> [NSSortDescriptor] {
+        [NSSortDescriptor(keyPath: \Contact.name, ascending: order == .asc)]
     }
     
 }
